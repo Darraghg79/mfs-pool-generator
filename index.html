@@ -204,42 +204,27 @@
         .formation {
             background: rgba(255, 255, 255, 0.2);
             border-radius: 8px;
-            padding: 12px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .formation-header {
             display: flex;
             align-items: center;
-            gap: 12px;
+            justify-content: space-between;
         }
 
         .formation-number {
             font-weight: 600;
-            min-width: 80px;
-        }
-
-        .formation-image {
-            width: 48px;
-            height: 48px;
-            background: white;
-            border-radius: 4px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-            overflow: hidden;
-        }
-
-        .formation-image img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-        }
-
-        .formation-placeholder {
-            font-weight: bold;
-            font-size: 12px;
+            color: white;
         }
 
         .formation-info {
-            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .formation-badge {
@@ -247,7 +232,6 @@
             border-radius: 6px;
             font-weight: bold;
             font-size: 12px;
-            margin-bottom: 4px;
         }
 
         .formation-badge.block {
@@ -261,8 +245,33 @@
         }
 
         .formation-name {
-            font-size: 10px;
             color: #e5e7eb;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .formation-image-large {
+            width: 100%;
+            background: white;
+            border-radius: 8px;
+            padding: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 8px;
+        }
+
+        .formation-image-large img {
+            width: 238px;
+            height: auto;
+            object-fit: contain;
+        }
+
+        .formation-placeholder-large {
+            font-weight: bold;
+            font-size: 16px;
+            color: #9ca3af;
+            text-align: center;
         }
 
         .summary {
@@ -303,8 +312,8 @@
         }
 
         .pool-grid {
-            display: grid;
-            grid-template-columns: 1fr;
+            display: flex;
+            flex-direction: column;
             gap: 16px;
         }
 
@@ -358,24 +367,17 @@
             width: 100%;
             background: white;
             border-radius: 8px;
-            padding: 12px;
+            padding: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
-            min-height: 80px;
             margin-top: 8px;
         }
 
         .pool-formation-image img {
-            max-width: 100%;
-            max-height: 120px;
+            width: 238px;
+            height: auto;
             object-fit: contain;
-        }
-
-        @media (min-width: 768px) {
-            .pool-grid {
-                grid-template-columns: 1fr 1fr;
-            }
         }
     </style>
 </head>
@@ -463,6 +465,7 @@
             <div class="card rules">
                 <p>• Maximum 6 rounds per meet<br/>
                 • 3 scoring formations per round<br/>
+                • Maximum 1 block per round<br/>
                 • 35 seconds working time</p>
             </div>
         </div>
@@ -583,7 +586,7 @@
                 if (loadedCount > 0) {
                     statusElement.innerHTML = `
                         ✅ Loaded ${loadedCount}/${totalImages} formation images<br>
-                        <small style="opacity: 0.8;">📱 Formation diagrams will display in generated rounds</small>
+                        <small style="opacity: 0.8;">📱 Formation diagrams display at 238px width</small>
                     `;
                     
                     // Hide debug info after successful load
@@ -603,10 +606,31 @@
             });
         }
 
-        // Utility functions
+        // Utility functions - Updated generation rule: max 1 block per round
         function generateRound() {
-            const shuffled = [...allFormations].sort(() => Math.random() - 0.5);
-            return shuffled.slice(0, 3);
+            const round = [];
+            
+            // Decide randomly whether to include a block (50% chance)
+            const includeBlock = Math.random() < 0.5;
+            
+            if (includeBlock) {
+                // Add one random block
+                const randomBlock = blocks[Math.floor(Math.random() * blocks.length)];
+                round.push(randomBlock);
+            }
+            
+            // Fill remaining slots with randoms
+            const remainingSlots = 3 - round.length;
+            const availableRandoms = [...randoms];
+            
+            for (let i = 0; i < remainingSlots; i++) {
+                const randomIndex = Math.floor(Math.random() * availableRandoms.length);
+                const selectedRandom = availableRandoms.splice(randomIndex, 1)[0];
+                round.push(selectedRandom);
+            }
+            
+            // Shuffle the final round to randomize order
+            return round.sort(() => Math.random() - 0.5);
         }
 
         function formatFormation(formation) {
@@ -699,6 +723,7 @@
         }
 
         function createFormationImageElement(formation) {
+            const isBlock = typeof formation === 'number';
             const imageContainer = document.createElement('div');
             imageContainer.className = 'formation-image-large';
             
@@ -716,7 +741,7 @@
                 img.onerror = () => {
                     // Fallback to placeholder if image fails to load
                     imageContainer.innerHTML = `
-                        <div class="formation-placeholder-large" style="color: ${typeof formation === 'number' ? '#2563eb' : '#16a34a'};">
+                        <div class="formation-placeholder-large" style="color: ${isBlock ? '#2563eb' : '#16a34a'};">
                             ${formation}<br>
                             <small style="font-size: 12px; font-weight: normal;">Image not available</small>
                         </div>
@@ -725,7 +750,7 @@
                 imageContainer.appendChild(img);
             } else {
                 imageContainer.innerHTML = `
-                    <div class="formation-placeholder-large" style="color: ${typeof formation === 'number' ? '#2563eb' : '#16a34a'};">
+                    <div class="formation-placeholder-large" style="color: ${isBlock ? '#2563eb' : '#16a34a'};">
                         ${formation}<br>
                         <small style="font-size: 12px; font-weight: normal;">Image not available</small>
                     </div>
