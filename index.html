@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MFS Intermediate Pool Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1e3a8a, #1e40af, #0ea5e9);
+            min-height: 100vh;
+            padding: 16px;
+            color: white;
+        }
+
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            color: #bfdbfe;
+            font-size: 14px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .debug-info {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 16px;
+            font-size: 12px;
+        }
+
+        .debug-info h4 {
+            color: #fbbf24;
+            margin-bottom: 8px;
+        }
+
+        .debug-info p {
+            color: #e5e7eb;
+            line-height: 1.4;
+        }
+
+        .pool-reference {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .pool-section h3 {
+            font-size: 14px;
+            color: #bfdbfe;
+            margin-bottom: 8px;
+        }
+
+        .pool-items {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+
+        .pool-item {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .block-item { background: rgba(59, 130, 246, 0.3); }
+        .random-item { background: rgba(34, 197, 94, 0.3); }
+
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            padding: 12px 16px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-primary {
+            background: #16a34a;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #2563eb;
+            color: white;
+        }
+
+        .btn-outline {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        .round-selector {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .round-btn {
+            padding: 8px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .round-btn.active {
+            background: #2563eb;
+            color: white;
+        }
+
+        .round-btn.generated {
+            background: rgba(34, 197, 94, 0.3);
+            color: white;
+        }
+
+        .round-btn.inactive {
+            background: rgba(255, 255, 255, 0.2);
+            color: #bfdbfe;
+        }
+
+        .round-display {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+
+        .round-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .round-title {
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .timer-info {
+            font-size: 12px;
+            color: #bfdbfe;
+        }
+
+        .formations {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .formation {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            padding: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .formation-number {
+            font-weight: 600;
+            min-width: 80px;
+        }
+
+        .formation-image {
+            width: 48px;
+            height: 48px;
+            background: white;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+
+        .formation-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .formation-placeholder {
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        .formation-info {
+            flex: 1;
+        }
+
+        .formation-badge {
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 12px;
+            margin-bottom: 4px;
+        }
+
+        .formation-badge.block {
+            background: #2563eb;
+            color: white;
+        }
+
+        .formation-badge.random {
+            background: #16a34a;
+            color: white;
+        }
+
+        .formation-name {
+            font-size: 10px;
+            color: #e5e7eb;
+        }
+
+        .summary {
+            font-size: 12px;
+        }
+
+        .summary-line {
+            margin-bottom: 8px;
+        }
+
+        .summary-round {
+            color: #bfdbfe;
+        }
+
+        .summary-formations {
+            color: white;
+            margin-left: 8px;
+        }
+
+        .rules {
+            background: rgba(255, 255, 255, 0.05);
+            text-align: center;
+            font-size: 10px;
+            color: #bfdbfe;
+            line-height: 1.4;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .nav-btn {
+            margin-bottom: 20px;
+        }
+
+        .dive-pool-view {
+            max-width: 600px;
+        }
+
+        .pool-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+
+        .pool-formation {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        .pool-formation-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+
+        .pool-formation-id {
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-weight: bold;
+            min-width: 50px;
+            text-align: center;
+        }
+
+        .pool-formation-id.block {
+            background: #2563eb;
+            color: white;
+        }
+
+        .pool-formation-id.random {
+            background: #16a34a;
+            color: white;
+        }
+
+        .pool-formation-details {
+            flex: 1;
+        }
+
+        .pool-formation-name {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .pool-formation-type {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        .pool-formation-image {
+            width: 100%;
+            background: white;
+            border-radius: 8px;
+            padding: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 80px;
+            margin-top: 8px;
+        }
+
+        .pool-formation-image img {
+            max-width: 100%;
+            max-height: 120px;
+            object-fit: contain;
+        }
+
+        @media (min-width: 768px) {
+            .pool-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="mainContainer">
+        <!-- Generator View -->
+        <div id="generatorView">
+            <div class="header">
+                <h1>🛩️ MFS Intermediate</h1>
+                <p>Pool Generator</p>
+            </div>
+
+            <!-- Debug Information -->
+            <div class="debug-info" id="debugInfo">
+                <h4>🔧 Image Status</h4>
+                <p id="imageStatus">Checking for formation images...</p>
+            </div>
+
+            <button class="btn btn-outline nav-btn" onclick="showDivePool()">
+                📖 Dive Pool Reference
+            </button>
+
+            <div class="card">
+                <h2 style="margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                    🏆 Available Formations
+                </h2>
+                <div class="pool-reference">
+                    <div class="pool-section">
+                        <h3>Blocks</h3>
+                        <div class="pool-items">
+                            <span class="pool-item block-item">5</span>
+                            <span class="pool-item block-item">6</span>
+                            <span class="pool-item block-item">7</span>
+                            <span class="pool-item block-item">8</span>
+                            <span class="pool-item block-item">10</span>
+                            <span class="pool-item block-item">17</span>
+                        </div>
+                    </div>
+                    <div class="pool-section">
+                        <h3>Randoms</h3>
+                        <div class="pool-items">
+                            <span class="pool-item random-item">G</span>
+                            <span class="pool-item random-item">H</span>
+                            <span class="pool-item random-item">J</span>
+                            <span class="pool-item random-item">K</span>
+                            <span class="pool-item random-item">L</span>
+                            <span class="pool-item random-item">M</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="controls">
+                <button class="btn btn-primary" onclick="generateSingleRound()" id="singleRoundBtn">
+                    🎲 Round <span id="currentRoundNumber">1</span>
+                </button>
+                <button class="btn btn-secondary" onclick="generateFullMeet()">
+                    🏆 Full Meet
+                </button>
+            </div>
+
+            <div class="card hidden" id="roundSelectorCard">
+                <h3 style="margin-bottom: 12px;">Select Round</h3>
+                <div class="round-selector" id="roundSelector"></div>
+            </div>
+
+            <div class="round-display hidden" id="roundDisplay">
+                <div class="round-header">
+                    <div class="round-title" id="roundTitle">Round 1</div>
+                    <div class="timer-info">⏱️ 35 seconds</div>
+                </div>
+                <div class="formations" id="formationsContainer"></div>
+            </div>
+
+            <div class="card hidden" id="summaryCard">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <h3>Meet Summary</h3>
+                    <button class="btn btn-outline" onclick="clearAll()" style="padding: 4px 8px; font-size: 12px;">
+                        🔄 Clear
+                    </button>
+                </div>
+                <div class="summary" id="summaryContainer"></div>
+            </div>
+
+            <div class="card rules">
+                <p>• Maximum 6 rounds per meet<br/>
+                • 3 scoring formations per round<br/>
+                • 35 seconds working time</p>
+            </div>
+        </div>
+
+        <!-- Dive Pool View -->
+        <div id="divePoolView" class="hidden dive-pool-view">
+            <div style="display: flex; align-items: center; margin-bottom: 24px;">
+                <button class="btn btn-outline" onclick="showGenerator()" style="margin-right: 16px; padding: 8px;">
+                    ← Back
+                </button>
+                <div>
+                    <h1 style="font-size: 24px; font-weight: bold;">Dive Pool Reference</h1>
+                    <p style="color: #bfdbfe; font-size: 14px;">MFS Intermediate Formations</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2 style="margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                    <span style="background: #2563eb; padding: 4px 8px; border-radius: 4px; font-size: 12px;">BLOCKS</span>
+                </h2>
+                <div class="pool-grid" id="blocksGrid"></div>
+            </div>
+
+            <div class="card">
+                <h2 style="margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                    <span style="background: #16a34a; padding: 4px 8px; border-radius: 4px; font-size: 12px;">RANDOMS</span>
+                </h2>
+                <div class="pool-grid" id="randomsGrid"></div>
+            </div>
+
+            <div style="text-align: center;">
+                <button class="btn btn-secondary" onclick="showGenerator()">
+                    Back to Pool Generator
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // App state
+        const state = {
+            rounds: [],
+            currentRound: 1,
+            isGenerating: false,
+            imagesLoaded: 0,
+            totalImages: 12
+        };
+
+        // Dive pool data
+        const blocks = [5, 6, 7, 8, 10, 17];
+        const randoms = ['G', 'H', 'J', 'K', 'L', 'M'];
+        const allFormations = [...blocks, ...randoms];
+
+        const formationNames = {
+            5: 'Upright Auger',
+            6: 'Gears',
+            7: 'Periscope',
+            8: 'Bison',
+            10: 'Flat Stairstep',
+            17: 'Rolly',
+            'G': 'T-Square',
+            'H': 'Tetris',
+            'J': 'Upright Star',
+            'K': 'Belly Star',
+            'L': 'Waffle Maker',
+            'M': 'Caterpillar'
+        };
+
+        // Image storage
+        const formationImages = {};
+
+        // Simple image loading for local files
+        function loadFormationImages() {
+            const statusElement = document.getElementById('imageStatus');
+            statusElement.textContent = 'Loading formation images...';
+            
+            let loadedCount = 0;
+            const totalImages = 12;
+            
+            // Map formations to exact filenames
+            const imageMap = {
+                5: 'block-5.png',
+                6: 'block-6.png', 
+                7: 'block-7.png',
+                8: 'block-8.png',
+                10: 'block-10.png',
+                17: 'block-17.png',
+                'G': 'random-G.png',
+                'H': 'random-H.png',
+                'J': 'random-J.png', 
+                'K': 'random-K.png',
+                'L': 'random-L.png',
+                'M': 'random-M.png'
+            };
+            
+            // Test each image
+            const imagePromises = allFormations.map(formation => {
+                return new Promise((resolve) => {
+                    const img = new Image();
+                    const filename = imageMap[formation];
+                    
+                    img.onload = () => {
+                        formationImages[formation] = filename;
+                        loadedCount++;
+                        resolve(true);
+                    };
+                    
+                    img.onerror = () => {
+                        resolve(false);
+                    };
+                    
+                    img.src = filename;
+                });
+            });
+            
+            // Wait for all images to load (or fail)
+            Promise.all(imagePromises).then(() => {
+                if (loadedCount > 0) {
+                    statusElement.innerHTML = `
+                        ✅ Loaded ${loadedCount}/${totalImages} formation images<br>
+                        <small style="opacity: 0.8;">📱 Formation diagrams will display in generated rounds</small>
+                    `;
+                    
+                    // Hide debug info after successful load
+                    setTimeout(() => {
+                        document.getElementById('debugInfo').style.display = 'none';
+                    }, 4000);
+                } else {
+                    statusElement.innerHTML = `
+                        📁 To show formation images:<br>
+                        <small style="opacity: 0.8;">1. Save images as block-5.png, random-G.png etc.<br>
+                        2. Put them in same folder as this HTML file<br>
+                        3. Refresh the page</small>
+                    `;
+                }
+                
+                state.imagesLoaded = loadedCount;
+            });
+        }
+
+        // Utility functions
+        function generateRound() {
+            const shuffled = [...allFormations].sort(() => Math.random() - 0.5);
+            return shuffled.slice(0, 3);
+        }
+
+        function formatFormation(formation) {
+            return typeof formation === 'number' ? `Block ${formation}` : `Random ${formation}`;
+        }
+
+        // Generation functions
+        function generateSingleRound() {
+            if (state.isGenerating) return;
+            
+            state.isGenerating = true;
+            updateUI();
+            
+            setTimeout(() => {
+                const newRound = generateRound();
+                state.rounds[state.currentRound - 1] = newRound;
+                state.isGenerating = false;
+                updateUI();
+            }, 300);
+        }
+
+        function generateFullMeet() {
+            if (state.isGenerating) return;
+            
+            state.isGenerating = true;
+            updateUI();
+            
+            setTimeout(() => {
+                state.rounds = [];
+                for (let i = 0; i < 6; i++) {
+                    state.rounds.push(generateRound());
+                }
+                state.currentRound = 1;
+                state.isGenerating = false;
+                updateUI();
+            }, 500);
+        }
+
+        function clearAll() {
+            state.rounds = [];
+            state.currentRound = 1;
+            updateUI();
+        }
+
+        function setCurrentRound(roundNum) {
+            state.currentRound = roundNum;
+            updateUI();
+        }
+
+        // UI functions
+        function updateUI() {
+            updateCurrentRoundNumber();
+            updateRoundSelector();
+            updateRoundDisplay();
+            updateSummary();
+            updateButtons();
+        }
+
+        function updateCurrentRoundNumber() {
+            document.getElementById('currentRoundNumber').textContent = state.currentRound;
+        }
+
+        function updateRoundSelector() {
+            const card = document.getElementById('roundSelectorCard');
+            const selector = document.getElementById('roundSelector');
+            
+            if (state.rounds.length > 0) {
+                card.classList.remove('hidden');
+                selector.innerHTML = '';
+                
+                for (let i = 1; i <= 6; i++) {
+                    const btn = document.createElement('button');
+                    btn.className = 'round-btn';
+                    btn.textContent = i;
+                    btn.onclick = () => setCurrentRound(i);
+                    
+                    if (i === state.currentRound) {
+                        btn.classList.add('active');
+                    } else if (state.rounds[i - 1]) {
+                        btn.classList.add('generated');
+                    } else {
+                        btn.classList.add('inactive');
+                    }
+                    
+                    selector.appendChild(btn);
+                }
+            } else {
+                card.classList.add('hidden');
+            }
+        }
+
+        function createFormationImageElement(formation) {
+            const imageContainer = document.createElement('div');
+            imageContainer.className = 'formation-image-large';
+            
+            const imageMap = {
+                5: 'block-5.png', 6: 'block-6.png', 7: 'block-7.png',
+                8: 'block-8.png', 10: 'block-10.png', 17: 'block-17.png',
+                'G': 'random-G.png', 'H': 'random-H.png', 'J': 'random-J.png',
+                'K': 'random-K.png', 'L': 'random-L.png', 'M': 'random-M.png'
+            };
+            
+            if (formationImages[formation]) {
+                const img = document.createElement('img');
+                img.src = imageMap[formation];
+                img.alt = formationNames[formation];
+                img.onerror = () => {
+                    // Fallback to placeholder if image fails to load
+                    imageContainer.innerHTML = `
+                        <div class="formation-placeholder-large" style="color: ${typeof formation === 'number' ? '#2563eb' : '#16a34a'};">
+                            ${formation}<br>
+                            <small style="font-size: 12px; font-weight: normal;">Image not available</small>
+                        </div>
+                    `;
+                };
+                imageContainer.appendChild(img);
+            } else {
+                imageContainer.innerHTML = `
+                    <div class="formation-placeholder-large" style="color: ${typeof formation === 'number' ? '#2563eb' : '#16a34a'};">
+                        ${formation}<br>
+                        <small style="font-size: 12px; font-weight: normal;">Image not available</small>
+                    </div>
+                `;
+            }
+            
+            return imageContainer;
+        }
+
+        function updateRoundDisplay() {
+            const display = document.getElementById('roundDisplay');
+            const title = document.getElementById('roundTitle');
+            const container = document.getElementById('formationsContainer');
+            
+            if (state.rounds[state.currentRound - 1]) {
+                display.classList.remove('hidden');
+                title.textContent = `Round ${state.currentRound}`;
+                
+                container.innerHTML = '';
+                const round = state.rounds[state.currentRound - 1];
+                
+                round.forEach((formation, index) => {
+                    const formationDiv = document.createElement('div');
+                    formationDiv.className = 'formation';
+                    
+                    const isBlock = typeof formation === 'number';
+                    
+                    // Create header with formation info
+                    const header = document.createElement('div');
+                    header.className = 'formation-header';
+                    header.innerHTML = `
+                        <div class="formation-number">Formation ${index + 1}</div>
+                        <div class="formation-info">
+                            <div class="formation-badge ${isBlock ? 'block' : 'random'}">
+                                ${formatFormation(formation)}
+                            </div>
+                            <div class="formation-name">${formationNames[formation]}</div>
+                        </div>
+                    `;
+                    
+                    formationDiv.appendChild(header);
+                    
+                    // Add large image underneath
+                    const imageElement = createFormationImageElement(formation);
+                    formationDiv.appendChild(imageElement);
+                    
+                    container.appendChild(formationDiv);
+                });
+            } else {
+                display.classList.add('hidden');
+            }
+        }
+
+        function updateSummary() {
+            const card = document.getElementById('summaryCard');
+            const container = document.getElementById('summaryContainer');
+            
+            if (state.rounds.length > 0) {
+                card.classList.remove('hidden');
+                container.innerHTML = '';
+                
+                state.rounds.forEach((round, index) => {
+                    const line = document.createElement('div');
+                    line.className = 'summary-line';
+                    line.innerHTML = `
+                        <span class="summary-round">Round ${index + 1}:</span>
+                        <span class="summary-formations">${round.join(', ')}</span>
+                    `;
+                    container.appendChild(line);
+                });
+            } else {
+                card.classList.add('hidden');
+            }
+        }
+
+        function updateButtons() {
+            const singleBtn = document.getElementById('singleRoundBtn');
+            singleBtn.disabled = state.isGenerating;
+        }
+
+        // View switching
+        function showDivePool() {
+            document.getElementById('generatorView').classList.add('hidden');
+            document.getElementById('divePoolView').classList.remove('hidden');
+            document.getElementById('mainContainer').className = 'container dive-pool-view';
+            initializeDivePoolView();
+        }
+
+        function showGenerator() {
+            document.getElementById('divePoolView').classList.add('hidden');
+            document.getElementById('generatorView').classList.remove('hidden');
+            document.getElementById('mainContainer').className = 'container';
+        }
+
+        function initializeDivePoolView() {
+            const blocksGrid = document.getElementById('blocksGrid');
+            const randomsGrid = document.getElementById('randomsGrid');
+            
+            const imageMap = {
+                5: 'block-5.png', 6: 'block-6.png', 7: 'block-7.png',
+                8: 'block-8.png', 10: 'block-10.png', 17: 'block-17.png',
+                'G': 'random-G.png', 'H': 'random-H.png', 'J': 'random-J.png',
+                'K': 'random-K.png', 'L': 'random-L.png', 'M': 'random-M.png'
+            };
+            
+            // Populate blocks
+            blocksGrid.innerHTML = '';
+            blocks.forEach(block => {
+                const div = document.createElement('div');
+                div.className = 'pool-formation';
+                
+                // Create header
+                const header = document.createElement('div');
+                header.className = 'pool-formation-header';
+                header.innerHTML = `
+                    <div class="pool-formation-id block">${block}</div>
+                    <div class="pool-formation-details">
+                        <div class="pool-formation-name">${formationNames[block]}</div>
+                        <div class="pool-formation-type">Block ${block}</div>
+                    </div>
+                `;
+                div.appendChild(header);
+                
+                // Add large image
+                const imageContainer = document.createElement('div');
+                imageContainer.className = 'pool-formation-image';
+                
+                if (formationImages[block]) {
+                    const img = document.createElement('img');
+                    img.src = imageMap[block];
+                    img.alt = formationNames[block];
+                    img.onerror = () => {
+                        imageContainer.innerHTML = `
+                            <div class="formation-placeholder-large" style="color: #2563eb; font-weight: bold;">
+                                ${block}<br>
+                                <small style="font-size: 12px; font-weight: normal;">Image not available</small>
+                            </div>
+                        `;
+                    };
+                    imageContainer.appendChild(img);
+                } else {
+                    imageContainer.innerHTML = `
+                        <div class="formation-placeholder-large" style="color: #2563eb; font-weight: bold;">
+                            ${block}<br>
+                            <small style="font-size: 12px; font-weight: normal;">Image not available</small>
+                        </div>
+                    `;
+                }
+                
+                div.appendChild(imageContainer);
+                blocksGrid.appendChild(div);
+            });
+            
+            // Populate randoms
+            randomsGrid.innerHTML = '';
+            randoms.forEach(random => {
+                const div = document.createElement('div');
+                div.className = 'pool-formation';
+                
+                // Create header
+                const header = document.createElement('div');
+                header.className = 'pool-formation-header';
+                header.innerHTML = `
+                    <div class="pool-formation-id random">${random}</div>
+                    <div class="pool-formation-details">
+                        <div class="pool-formation-name">${formationNames[random]}</div>
+                        <div class="pool-formation-type">Random ${random}</div>
+                    </div>
+                `;
+                div.appendChild(header);
+                
+                // Add large image
+                const imageContainer = document.createElement('div');
+                imageContainer.className = 'pool-formation-image';
+                
+                if (formationImages[random]) {
+                    const img = document.createElement('img');
+                    img.src = imageMap[random];
+                    img.alt = formationNames[random];
+                    img.onerror = () => {
+                        imageContainer.innerHTML = `
+                            <div class="formation-placeholder-large" style="color: #16a34a; font-weight: bold;">
+                                ${random}<br>
+                                <small style="font-size: 12px; font-weight: normal;">Image not available</small>
+                            </div>
+                        `;
+                    };
+                    imageContainer.appendChild(img);
+                } else {
+                    imageContainer.innerHTML = `
+                        <div class="formation-placeholder-large" style="color: #16a34a; font-weight: bold;">
+                            ${random}<br>
+                            <small style="font-size: 12px; font-weight: normal;">Image not available</small>
+                        </div>
+                    `;
+                }
+                
+                div.appendChild(imageContainer);
+                randomsGrid.appendChild(div);
+            });
+        }
+
+        // Initialize the app
+        function initializeApp() {
+            console.log('MFS Pool Generator starting...');
+            loadFormationImages();
+            updateUI();
+            console.log('App initialized successfully');
+        }
+
+        // Start the app when page loads
+        document.addEventListener('DOMContentLoaded', initializeApp);
+    </script>
+</body>
+</html>
